@@ -524,14 +524,14 @@ class DownloadCard(QFrame):
                 border-radius: 12px;
             }}
             QLabel#card_title {{ color: {t['text_primary']}; }}
-            QLabel#counter_label {{ color: {t['text_muted']}; }}
-            QLabel#card_status {{ color: {t['text_secondary']}; }}
-            QLabel#url_label {{ color: {t['text_muted']}; }}
+            QLabel#counter_label {{ color: {t['text_accent']}; }}
+            QLabel#card_status {{ color: {t['text_accent']}; }}
+            QLabel#url_label {{ color: {t['text_secondary']}; }}
             QLabel#thumb_label {{
                 background: {t['bg_tertiary']};
                 border: 1px solid {t['border']};
                 border-radius: 8px;
-                color: {t['text_muted']};
+                color: {t['accent']};
             }}
             QLabel#speed_tag {{
                 background: transparent;
@@ -692,7 +692,7 @@ class FormatPanel(QFrame):
     def _apply_theme(self):
         t = self.theme
         self.setStyleSheet(f"""
-            QLabel#fmt_label {{ color: {t['text_secondary']}; }}
+            QLabel#fmt_label {{ color: {t['text_accent']}; }}
             QComboBox#fmt_combo {{
                 background: {t['bg_input']};
                 border: 1px solid {t['border']};
@@ -795,10 +795,10 @@ class StatsBar(QFrame):
         t = self.theme
         self.setStyleSheet(f"""
             QFrame {{ background: {t['bg_secondary']}; border-top: 1px solid {t['border']}; }}
-            QLabel#stat_total {{ color: {t['text_secondary']}; }}
+            QLabel#stat_total {{ color: {t['text_accent']}; }}
             QLabel#stat_done {{ color: {t['accent_green']}; }}
             QLabel#stat_fail {{ color: {t['accent_red']}; }}
-            QLabel#session_lbl {{ color: {t['text_muted']}; }}
+            QLabel#session_lbl {{ color: {t['text_secondary']}; }}
         """)
 
     def update(self, total, done, failed):
@@ -1094,8 +1094,8 @@ class MainWindow(QMainWindow):
             QWidget#url_zone {{
                 background: {t['bg_secondary']};
             }}
-            QLabel#headline {{ color: {t['text_secondary']}; }}
-            QLabel#platforms_label {{ color: {t['text_muted']}; }}
+            QLabel#headline {{ color: {t['text_accent']}; }}
+            QLabel#platforms_label {{ color: {t['text_secondary']}; }}
             QLineEdit#url_input {{
                 background: {t['bg_card']};
                 border: 2px solid {t['border']};
@@ -1141,7 +1141,7 @@ class MainWindow(QMainWindow):
             QWidget#dl_header {{
                 background: {t['bg_primary']};
             }}
-            QLabel#section_title {{ color: {t['text_primary']}; }}
+            QLabel#section_title {{ color: {t['text_accent']}; }}
             QLabel#active_badge {{
                 background: transparent;
                 color: {t['accent']};
@@ -1177,7 +1177,7 @@ class MainWindow(QMainWindow):
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
             }}
-            QLabel#empty_text {{ color: {t['text_muted']}; line-height: 1.8; }}
+            QLabel#empty_text {{ color: {t['text_secondary']}; line-height: 1.8; }}
         """)
 
     # ── Actions ───────────────────────────────────────────────────────────────
