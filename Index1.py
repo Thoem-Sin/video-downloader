@@ -200,6 +200,7 @@ class DownloadWorker(QThread):
             "-f", fmt_sel,
             "--newline",
             "--progress",
+            "--print", "after_move:filepath",
             "-o", out_tmpl,
             *post,
             self.url
@@ -212,6 +213,7 @@ class DownloadWorker(QThread):
             )
             self.proc = proc
 
+            output_filepath = ""
             for line in proc.stdout:
                 self._pause_event.wait()
                 
@@ -221,6 +223,10 @@ class DownloadWorker(QThread):
                     return
 
                 self.log.emit(self.task_id, line)
+
+                # Capture output file path printed by --print after_move:filepath
+                if line and not line.startswith("[") and os.sep in line:
+                    output_filepath = line
 
                 # Parse progress
                 pct_match = re.search(r'(\d+\.?\d*)%', line)
@@ -235,7 +241,8 @@ class DownloadWorker(QThread):
 
             proc.wait()
             if proc.returncode == 0:
-                self.finished.emit(self.task_id, True, "Download complete!")
+                result_path = output_filepath if output_filepath else self.output_dir
+                self.finished.emit(self.task_id, True, result_path)
             else:
                 self.finished.emit(self.task_id, False, "Download failed")
 
@@ -254,7 +261,7 @@ class DownloadWorker(QThread):
             spd = speeds[i % len(speeds)]
             self.progress.emit(self.task_id, float(i), spd, eta)
             time.sleep(0.08)
-        self.finished.emit(self.task_id, True, "Demo download complete!")
+        self.finished.emit(self.task_id, True, self.output_dir)
 
 
 # ─── Animated Widget Helpers ───────────────────────────────────────────────────
@@ -521,7 +528,9 @@ class DownloadCard(QFrame):
             QLabel#card_status {{ color: {t['text_secondary']}; }}
             QLabel#url_label {{ color: {t['text_muted']}; }}
             QLabel#thumb_label {{
-                background: transparent;
+                background: {t['bg_tertiary']};
+                border: 1px solid {t['border']};
+                border-radius: 8px;
                 color: {t['text_muted']};
             }}
             QLabel#speed_tag {{
@@ -583,6 +592,8 @@ class DownloadCard(QFrame):
         self.progress_bar.setIndeterminate(False)
         self.progress_bar.setValue(100 if success else 0)
         self.cancel_btn.setEnabled(False)
+        self.pause_btn.setVisible(False)
+        self.resume_btn.setVisible(False)
         self.folder_btn.setEnabled(success)
         self.speed_tag.setText("")
         self.eta_tag.setText("")
@@ -1316,7 +1327,9 @@ class MainWindow(QMainWindow):
         if task_id in self._tasks:
             self._tasks[task_id]["status"] = "done" if success else "failed"
         if task_id in self._cards:
-            self._cards[task_id].set_finished(success, message, self._output_dir)
+            # On success, message contains the output file path; on failure it's an error string
+            output_path = message if success else self._output_dir
+            self._cards[task_id].set_finished(success, message, output_path)
         self._update_stats()
 
     def _update_stats(self):
