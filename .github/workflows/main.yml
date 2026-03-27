@@ -33,10 +33,7 @@ jobs:
 
     - name: Build EXE with PyInstaller
       run: |
-        pyinstaller --onefile ^
-          --windowed ^
-          --name "4K_Video_Downloader" ^
-          Index1.py
+        pyinstaller --onefile --windowed --name "4K_Video_Downloader" Index1.py
 
     - name: Upload EXE as artifact
       uses: actions/upload-artifact@v4
