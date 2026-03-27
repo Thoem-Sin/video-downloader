@@ -51,10 +51,10 @@ DARK_THEME = {
     "accent_green": "#00D48A",
     "accent_yellow": "#FFB830",
     "accent_red": "#FF5C72",
-    "text_primary": "#F0F0F8",
-    "text_secondary": "#8888A8",
-    "text_muted": "#555568",
-    "text_accent": "#6C63FF",
+    "text_primary": "#0D0D0F",      # matches bg_primary
+    "text_secondary": "#141418",    # matches bg_secondary
+    "text_muted": "#141418",        # matches bg_secondary
+    "text_accent": "#0D0D0F",       # matches bg_primary
     "shadow": "rgba(0,0,0,0.6)",
     "scrollbar": "#2A2A38",
     "scrollbar_hover": "#3A3A50",
@@ -80,10 +80,10 @@ LIGHT_THEME = {
     "accent_green": "#00C47A",
     "accent_yellow": "#F5A800",
     "accent_red": "#FF4058",
-    "text_primary": "#1A1A2E",
-    "text_secondary": "#5A5A7A",
-    "text_muted": "#9090B0",
-    "text_accent": "#6C63FF",
+    "text_primary": "#F5F5FA",      # matches bg_primary
+    "text_secondary": "#EBEBF5",    # matches bg_secondary
+    "text_muted": "#F5F5FA",        # matches bg_primary
+    "text_accent": "#F5F5FA",       # matches bg_primary
     "shadow": "rgba(0,0,0,0.12)",
     "scrollbar": "#DCDCEE",
     "scrollbar_hover": "#CBCBDE",
@@ -200,7 +200,6 @@ class DownloadWorker(QThread):
             "-f", fmt_sel,
             "--newline",
             "--progress",
-            "--print", "after_move:filepath",
             "-o", out_tmpl,
             *post,
             self.url
@@ -213,7 +212,6 @@ class DownloadWorker(QThread):
             )
             self.proc = proc
 
-            output_filepath = ""
             for line in proc.stdout:
                 self._pause_event.wait()
                 
@@ -223,10 +221,6 @@ class DownloadWorker(QThread):
                     return
 
                 self.log.emit(self.task_id, line)
-
-                # Capture output file path printed by --print after_move:filepath
-                if line and not line.startswith("[") and os.sep in line:
-                    output_filepath = line
 
                 # Parse progress
                 pct_match = re.search(r'(\d+\.?\d*)%', line)
@@ -241,8 +235,7 @@ class DownloadWorker(QThread):
 
             proc.wait()
             if proc.returncode == 0:
-                result_path = output_filepath if output_filepath else self.output_dir
-                self.finished.emit(self.task_id, True, result_path)
+                self.finished.emit(self.task_id, True, "Download complete!")
             else:
                 self.finished.emit(self.task_id, False, "Download failed")
 
@@ -261,7 +254,7 @@ class DownloadWorker(QThread):
             spd = speeds[i % len(speeds)]
             self.progress.emit(self.task_id, float(i), spd, eta)
             time.sleep(0.08)
-        self.finished.emit(self.task_id, True, self.output_dir)
+        self.finished.emit(self.task_id, True, "Demo download complete!")
 
 
 # ─── Animated Widget Helpers ───────────────────────────────────────────────────
@@ -523,36 +516,34 @@ class DownloadCard(QFrame):
                 border: 1px solid {t['border']};
                 border-radius: 12px;
             }}
-            QLabel#card_title {{ color: {t['text_primary']}; }}
-            QLabel#counter_label {{ color: {t['text_accent']}; }}
-            QLabel#card_status {{ color: {t['text_accent']}; }}
-            QLabel#url_label {{ color: {t['text_secondary']}; }}
+            QLabel#card_title {{ color: {t['bg_card']}; }}
+            QLabel#counter_label {{ color: {t['bg_card']}; }}
+            QLabel#card_status {{ color: {t['bg_card']}; }}
+            QLabel#url_label {{ color: {t['bg_card']}; }}
             QLabel#thumb_label {{
-                background: {t['bg_tertiary']};
-                border: 1px solid {t['border']};
-                border-radius: 8px;
-                color: {t['accent']};
+                background: transparent;
+                color: {t['bg_card']};
             }}
             QLabel#speed_tag {{
                 background: transparent;
-                color: {t['accent']};
+                color: {t['bg_card']};
                 padding: 2px 6px;
             }}
             QLabel#eta_tag {{
                 background: transparent;
-                color: {t['accent_secondary']};
+                color: {t['bg_card']};
                 padding: 2px 6px;
             }}
             QPushButton#icon_btn {{
                 background: {t['bg_tertiary']};
                 border: 1px solid {t['border']};
                 border-radius: 6px;
-                color: {t['text_secondary']};
+                color: {t['bg_tertiary']};
                 font-size: 11px;
             }}
             QPushButton#icon_btn:hover {{
                 background: {t['bg_hover']};
-                color: {t['text_primary']};
+                color: {t['bg_hover']};
             }}
         """)
         self.progress_bar.set_theme_colors(t['accent'], t['progress_bg'])
@@ -592,8 +583,6 @@ class DownloadCard(QFrame):
         self.progress_bar.setIndeterminate(False)
         self.progress_bar.setValue(100 if success else 0)
         self.cancel_btn.setEnabled(False)
-        self.pause_btn.setVisible(False)
-        self.resume_btn.setVisible(False)
         self.folder_btn.setEnabled(success)
         self.speed_tag.setText("")
         self.eta_tag.setText("")
@@ -692,12 +681,12 @@ class FormatPanel(QFrame):
     def _apply_theme(self):
         t = self.theme
         self.setStyleSheet(f"""
-            QLabel#fmt_label {{ color: {t['text_accent']}; }}
+            QLabel#fmt_label {{ color: {t['bg_secondary']}; }}
             QComboBox#fmt_combo {{
                 background: {t['bg_input']};
                 border: 1px solid {t['border']};
                 border-radius: 8px;
-                color: {t['text_primary']};
+                color: {t['bg_input']};
                 padding: 6px 10px;
                 font-size: 9pt;
             }}
@@ -712,11 +701,11 @@ class FormatPanel(QFrame):
                 background: {t['bg_card']};
                 border: 1px solid {t['border']};
                 border-radius: 8px;
-                color: {t['text_primary']};
+                color: {t['bg_card']};
                 selection-background-color: {t['accent']};
                 outline: none;
             }}
-            QCheckBox#fmt_check {{ color: {t['text_secondary']}; spacing: 6px; }}
+            QCheckBox#fmt_check {{ color: {t['bg_secondary']}; spacing: 6px; }}
             QCheckBox#fmt_check::indicator {{
                 width: 16px; height: 16px;
                 border-radius: 4px;
@@ -795,10 +784,10 @@ class StatsBar(QFrame):
         t = self.theme
         self.setStyleSheet(f"""
             QFrame {{ background: {t['bg_secondary']}; border-top: 1px solid {t['border']}; }}
-            QLabel#stat_total {{ color: {t['text_accent']}; }}
-            QLabel#stat_done {{ color: {t['accent_green']}; }}
-            QLabel#stat_fail {{ color: {t['accent_red']}; }}
-            QLabel#session_lbl {{ color: {t['text_secondary']}; }}
+            QLabel#stat_total {{ color: {t['bg_secondary']}; }}
+            QLabel#stat_done {{ color: {t['bg_secondary']}; }}
+            QLabel#stat_fail {{ color: {t['bg_secondary']}; }}
+            QLabel#session_lbl {{ color: {t['bg_secondary']}; }}
         """)
 
     def update(self, total, done, failed):
@@ -1058,35 +1047,35 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(f"""
             QMainWindow, QWidget {{
                 background: {t['bg_primary']};
-                color: {t['text_primary']};
+                color: {t['bg_primary']};
             }}
             QWidget#titlebar {{
                 background: {t['bg_secondary']};
                 border-bottom: 1px solid {t['border']};
             }}
-            QLabel#logo_icon {{ color: {t['accent']}; }}
-            QLabel#app_name {{ color: {t['text_primary']}; }}
+            QLabel#logo_icon {{ color: {t['bg_secondary']}; }}
+            QLabel#app_name {{ color: {t['bg_secondary']}; }}
             QPushButton#nav_btn {{
                 background: transparent;
                 border: none;
                 border-radius: 8px;
-                color: {t['text_secondary']};
+                color: {t['bg_secondary']};
                 padding: 4px 12px;
             }}
             QPushButton#nav_btn:hover {{
                 background: {t['bg_hover']};
-                color: {t['text_primary']};
+                color: {t['bg_hover']};
             }}
             QPushButton#nav_btn:checked {{
                 background: {t['bg_hover']};
-                color: {t['accent']};
+                color: {t['bg_hover']};
                 border-bottom: 2px solid {t['accent']};
             }}
             QPushButton#theme_btn {{
                 background: {t['bg_tertiary']};
                 border: 1px solid {t['border']};
                 border-radius: 8px;
-                color: {t['text_primary']};
+                color: {t['bg_tertiary']};
             }}
             QPushButton#theme_btn:hover {{
                 background: {t['bg_hover']};
@@ -1094,13 +1083,13 @@ class MainWindow(QMainWindow):
             QWidget#url_zone {{
                 background: {t['bg_secondary']};
             }}
-            QLabel#headline {{ color: {t['text_accent']}; }}
-            QLabel#platforms_label {{ color: {t['text_secondary']}; }}
+            QLabel#headline {{ color: {t['bg_secondary']}; }}
+            QLabel#platforms_label {{ color: {t['bg_secondary']}; }}
             QLineEdit#url_input {{
                 background: {t['bg_card']};
                 border: 2px solid {t['border']};
                 border-radius: 10px;
-                color: {t['text_primary']};
+                color: {t['bg_card']};
                 padding: 8px 14px;
                 selection-background-color: {t['accent']};
             }}
@@ -1111,7 +1100,7 @@ class MainWindow(QMainWindow):
                 background: {t['accent']};
                 border: none;
                 border-radius: 10px;
-                color: white;
+                color: {t['accent']};
                 font-weight: 600;
             }}
             QPushButton#primary_btn:hover {{
@@ -1124,11 +1113,11 @@ class MainWindow(QMainWindow):
                 background: {t['bg_tertiary']};
                 border: 1px solid {t['border']};
                 border-radius: 10px;
-                color: {t['text_secondary']};
+                color: {t['bg_tertiary']};
             }}
             QPushButton#secondary_btn:hover {{
                 background: {t['bg_hover']};
-                color: {t['text_primary']};
+                color: {t['bg_hover']};
             }}
             QWidget#fmt_wrap {{
                 background: {t['bg_secondary']};
@@ -1141,20 +1130,20 @@ class MainWindow(QMainWindow):
             QWidget#dl_header {{
                 background: {t['bg_primary']};
             }}
-            QLabel#section_title {{ color: {t['text_accent']}; }}
+            QLabel#section_title {{ color: {t['bg_primary']}; }}
             QLabel#active_badge {{
                 background: transparent;
-                color: {t['accent']};
+                color: {t['bg_primary']};
                 padding: 2px 8px;
                 font-size: 8pt;
             }}
             QPushButton#ghost_btn {{
                 background: transparent;
                 border: none;
-                color: {t['text_muted']};
+                color: {t['bg_primary']};
                 padding: 4px 8px;
             }}
-            QPushButton#ghost_btn:hover {{ color: {t['text_secondary']}; }}
+            QPushButton#ghost_btn:hover {{ color: {t['bg_primary']}; }}
             QWidget#card_container, QWidget#dl_section {{
                 background: {t['bg_primary']};
             }}
@@ -1177,7 +1166,7 @@ class MainWindow(QMainWindow):
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
             }}
-            QLabel#empty_text {{ color: {t['text_secondary']}; line-height: 1.8; }}
+            QLabel#empty_text {{ color: {t['bg_primary']}; line-height: 1.8; }}
         """)
 
     # ── Actions ───────────────────────────────────────────────────────────────
@@ -1327,9 +1316,7 @@ class MainWindow(QMainWindow):
         if task_id in self._tasks:
             self._tasks[task_id]["status"] = "done" if success else "failed"
         if task_id in self._cards:
-            # On success, message contains the output file path; on failure it's an error string
-            output_path = message if success else self._output_dir
-            self._cards[task_id].set_finished(success, message, output_path)
+            self._cards[task_id].set_finished(success, message, self._output_dir)
         self._update_stats()
 
     def _update_stats(self):
